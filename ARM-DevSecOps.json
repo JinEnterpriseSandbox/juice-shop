@@ -1,0 +1,355 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "metadata": {
+        "_generator": {
+            "name": "bicep",
+            "templateHash": "1417122466541465793",
+            "version": "0.6.18.56646"
+        }
+    },
+    "outputs": {
+        "stringOutput": {
+            "type": "string",
+            "value": "[variables('DockerCompose')]"
+        }
+    },
+    "parameters": {
+        "acrName": {
+            "defaultValue": "[format('acrdevsecops{0}', resourcegroup().tags.LabInstance)]",
+            "type": "string"
+        },
+        "appServicePlanName": {
+            "defaultValue": "[format('sp-devsecops-{0}', resourcegroup().tags.LabInstance)]",
+            "type": "string"
+        },
+        "containerInstanceName": {
+            "defaultValue": "[format('sonarq-devsecops-{0}', resourcegroup().tags.LabInstance)]",
+            "type": "string"
+        },
+        "keyvaultName": {
+            "defaultValue": "[format('kvdevsecops{0}', resourcegroup().tags.LabInstance)]",
+            "type": "string"
+        },
+        "location": {
+            "defaultValue": "[resourceGroup().location]",
+            "type": "string"
+        },
+        "tenantId": {
+            "defaultValue": "[subscription().tenantId]",
+            "type": "string"
+        },
+        "webAppName": {
+            "defaultValue": "juiceshop",
+            "type": "string"
+        }
+    },
+    "resources": [
+        {
+            "apiVersion": "2021-03-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+                "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "kind": "app,linux,container",
+            "location": "[parameters('location')]",
+            "name": "[parameters('containerInstanceName')]",
+            "properties": {
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "enabled": true,
+                "hostNamesDisabled": false,
+                "httpsOnly": false,
+                "hyperV": false,
+                "isXenon": false,
+                "keyVaultReferenceIdentity": "SystemAssigned",
+                "redundancyMode": "None",
+                "reserved": true,
+                "scmSiteAlsoStopped": false,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                "siteConfig": {
+                    "acrUseManagedIdentityCreds": false,
+                    "appSettings": [
+                        {
+                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                            "value": "true"
+                        }
+                    ],
+                    "functionAppScaleLimit": 0,
+                    "http20Enabled": true,
+                    "linuxFxVersion": "DOCKER|sonarqube",
+                    "minimumElasticInstanceCount": 0,
+                    "numberOfWorkers": 1
+                }
+            },
+            "type": "Microsoft.Web/sites"
+        },
+        {
+            "apiVersion": "2021-03-01",
+            "kind": "linux",
+            "location": "[parameters('location')]",
+            "name": "[parameters('appServicePlanName')]",
+            "properties": {
+                "elasticScaleEnabled": false,
+                "hyperV": false,
+                "isSpot": false,
+                "isXenon": false,
+                "maximumElasticWorkerCount": 2,
+                "perSiteScaling": false,
+                "reserved": true,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0,
+                "zoneRedundant": false
+            },
+            "sku": {
+                "capacity": 1,
+                "family": "Pv3",
+                "name": "P1v3",
+                "size": "P1v3",
+                "tier": "PremiumV3"
+            },
+            "type": "Microsoft.Web/serverfarms"
+        },
+        {
+            "apiVersion": "2021-12-01-preview",
+            "location": "[parameters('location')]",
+            "name": "[parameters('acrName')]",
+            "properties": {
+                "adminUserEnabled": true,
+                "anonymousPullEnabled": false,
+                "dataEndpointEnabled": false,
+                "encryption": {
+                    "status": "disabled"
+                },
+                "networkRuleBypassOptions": "AzureServices",
+                "policies": {
+                    "exportPolicy": {
+                        "status": "enabled"
+                    },
+                    "quarantinePolicy": {
+                        "status": "disabled"
+                    },
+                    "retentionPolicy": {
+                        "days": 7,
+                        "status": "disabled"
+                    },
+                    "trustPolicy": {
+                        "status": "disabled",
+                        "type": "Notary"
+                    }
+                },
+                "publicNetworkAccess": "Enabled",
+                "zoneRedundancy": "Disabled"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "type": "Microsoft.ContainerRegistry/registries"
+        },
+        {
+            "apiVersion": "2021-11-01-preview",
+            "location": "[parameters('location')]",
+            "name": "[parameters('keyvaultName')]",
+            "properties": {
+                "accessPolicies": [],
+                "publicNetworkAccess": "Enabled",
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[parameters('tenantId')]"
+            },
+            "type": "Microsoft.KeyVault/vaults"
+        },
+        {
+            "apiVersion": "2021-03-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+                "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "kind": "app,linux,container",
+            "location": "[parameters('location')]",
+            "name": "[format('{0}-{1}-devsecops-{2}', parameters('webAppName'), 'dev', resourcegroup().tags.LabInstance)]",
+            "properties": {
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "enabled": true,
+                "hostNamesDisabled": false,
+                "httpsOnly": false,
+                "hyperV": false,
+                "isXenon": false,
+                "keyVaultReferenceIdentity": "SystemAssigned",
+                "redundancyMode": "None",
+                "reserved": true,
+                "scmSiteAlsoStopped": false,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                "siteConfig": {
+                    "acrUseManagedIdentityCreds": false,
+                    "appSettings": [
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_URL",
+                            "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))).loginServer]"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+                            "value": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), '2021-12-01-preview').username]"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+                            "value": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), '2021-12-01-preview').passwords[0].value]"
+                        },
+                        {
+                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                            "value": "false"
+                        }
+                    ],
+                    "functionAppScaleLimit": 0,
+                    "http20Enabled": true,
+                    "linuxFxVersion": "[format('DOCKER|{0}/juiceshopgit:1', reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))).loginServer)]",
+                    "minimumElasticInstanceCount": 0,
+                    "numberOfWorkers": 1
+                }
+            },
+            "type": "Microsoft.Web/sites"
+        },
+        {
+            "apiVersion": "2021-03-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+                "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "kind": "app,linux,container",
+            "location": "[parameters('location')]",
+            "name": "[format('dependency-track-devsecops-{0}', resourcegroup().tags.LabInstance)]",
+            "properties": {
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "enabled": true,
+                "hostNamesDisabled": false,
+                "httpsOnly": false,
+                "hyperV": false,
+                "isXenon": false,
+                "keyVaultReferenceIdentity": "SystemAssigned",
+                "redundancyMode": "None",
+                "reserved": true,
+                "scmSiteAlsoStopped": false,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                "siteConfig": {
+                    "acrUseManagedIdentityCreds": false,
+                    "appSettings": [
+                        {
+                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                            "value": "true"
+                        }
+                    ],
+                    "defaultDocuments": [
+                        "Default.htm",
+                        "Default.html",
+                        "Default.asp",
+                        "index.htm",
+                        "index.html",
+                        "iisstart.htm",
+                        "default.aspx",
+                        "index.php",
+                        "hostingstart.html"
+                    ],
+                    "functionAppScaleLimit": 0,
+                    "http20Enabled": true,
+                    "linuxFxVersion": "[concat('COMPOSE|', base64(variables('DockerCompose')))]",
+                    "minimumElasticInstanceCount": 0,
+                    "netFrameworkVersion": "v4.0",
+                    "numberOfWorkers": 1
+                }
+            },
+            "type": "Microsoft.Web/sites"
+        },
+        {
+            "apiVersion": "2021-11-01-preview",
+            "kind": "v12.0",
+            "location": "[parameters('location')]",
+            "name": "[format('sql-devsecops-{0}', resourcegroup().tags.LabInstance)]",
+            "properties": {
+                "administratorLogin": "secops",
+                "administratorLoginPassword": "P@$$w0rd123",
+                "minimalTlsVersion": "1.2",
+                "publicNetworkAccess": "Enabled",
+                "restrictOutboundNetworkAccess": "Disabled",
+                "version": "12.0"
+            },
+            "type": "Microsoft.Sql/servers"
+        },
+        {
+            "apiVersion": "2021-11-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', format('sql-devsecops-{0}', resourcegroup().tags.LabInstance))]"
+            ],
+            "kind": "v12.0,user,vcore,serverless",
+            "location": "[parameters('location')]",
+            "name": "[concat(format('sql-devsecops-{0}', resourcegroup().tags.LabInstance), '/dtrack')]",
+            "properties": {
+                "autoPauseDelay": 60,
+                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "isLedgerOn": false,
+                "maxSizeBytes": 17179869184,
+                "minCapacity": 0.5,
+                "readScale": "Disabled",
+                "requestedBackupStorageRedundancy": "Local",
+                "zoneRedundant": false
+            },
+            "sku": {
+                "capacity": 1,
+                "family": "Gen5",
+                "name": "GP_S_Gen5",
+                "tier": "GeneralPurpose"
+            },
+            "type": "Microsoft.Sql/servers/databases"
+        },
+        {
+            "apiVersion": "2021-11-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', format('sql-devsecops-{0}', resourcegroup().tags.LabInstance))]"
+            ],
+            "name": "[concat(format('sql-devsecops-{0}', resourcegroup().tags.LabInstance), '/AllowAccess')]",
+            "properties": {
+                "endIpAddress": "0.0.0.0",
+                "startIpAddress": "0.0.0.0"
+            },
+            "type": "Microsoft.Sql/servers/firewallRules"
+        },
+        {
+            "apiVersion": "2021-11-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', format('sql-devsecops-{0}', resourcegroup().tags.LabInstance))]"
+            ],
+            "name": "[concat(format('sql-devsecops-{0}', resourcegroup().tags.LabInstance), '/AllowAllWindowsAzureIps')]",
+            "properties": {
+                "endIpAddress": "255.255.255.255",
+                "startIpAddress": "255.255.255.255"
+            },
+            "type": "Microsoft.Sql/servers/firewallRules"
+        }
+    ],
+    "variables": {
+        "DockerCompose": "[replace(variables('DockerComposeExpanded'),'___SQL_NAME___', format('sql-devsecops-{0}', resourcegroup().tags.LabInstance))]",
+        "DockerComposeExpanded": "[base64ToString('dmVyc2lvbjogJzMuNycKCnZvbHVtZXM6CiAgZGVwZW5kZW5jeS10cmFjazoKCnNlcnZpY2VzOgogIGR0cmFjay1mcm9udGVuZDoKICAgIGltYWdlOiBkZXBlbmRlbmN5dHJhY2svYnVuZGxlZAogICAgZW52aXJvbm1lbnQ6CiAgICAtIEFMUElORV9EQVRBQkFTRV9NT0RFPWV4dGVybmFsCiAgICAtIEFMUElORV9EQVRBQkFTRV9VUkw9amRiYzpzcWxzZXJ2ZXI6Ly9fX19TUUxfTkFNRV9fXy5kYXRhYmFzZS53aW5kb3dzLm5ldDoxNDMzO2RhdGFiYXNlTmFtZT1kdHJhY2s7c2VuZFN0cmluZ1BhcmFtZXRlcnNBc1VuaWNvZGU9ZmFsc2UKICAgIC0gQUxQSU5FX0RBVEFCQVNFX0RSSVZFUj1jb20ubWljcm9zb2Z0LnNxbHNlcnZlci5qZGJjLlNRTFNlcnZlckRyaXZlcgogICAgLSBBTFBJTkVfREFUQUJBU0VfVVNFUk5BTUU9c2Vjb3BzCiAgICAtIEFMUElORV9EQVRBQkFTRV9QQVNTV09SRD1QQCQkdzByZDEyMwogICAgZGVwbG95OgogICAgICByZXNvdXJjZXM6CiAgICAgICAgbGltaXRzOgogICAgICAgICAgbWVtb3J5OiAxMjI4OG0KICAgICAgICByZXNlcnZhdGlvbnM6CiAgICAgICAgICBtZW1vcnk6IDgxOTJtCiAgICAgIHJlc3RhcnRfcG9saWN5OgogICAgICAgIGNvbmRpdGlvbjogb24tZmFpbHVyZQogICAgcG9ydHM6CiAgICAgIC0gIjgwODA6ODA4MCIKICAgIHZvbHVtZXM6CiAgICAgIC0gJHtXRUJBUFBfU1RPUkFHRV9IT01FfS9zaXRlL3d3d3Jvb3Q6L2RhdGEKICAgIHJlc3RhcnQ6IHVubGVzcy1zdG9wcGVk')]"
+    }
+}
